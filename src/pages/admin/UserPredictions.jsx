@@ -59,6 +59,15 @@ const UserPredictions = () => {
         return userMap;
       });
 
+      const getTimeMs = (ts) => {
+        if (!ts) return 0;
+        if (ts.seconds) return ts.seconds * 1000;
+        if (typeof ts === 'string') return new Date(ts).getTime();
+        return ts;
+      };
+
+      predsData.sort((a, b) => getTimeMs(b.submittedAt) - getTimeMs(a.submittedAt));
+
       setPredictions(predsData);
       setHasMore(more);
       
