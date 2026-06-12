@@ -254,3 +254,21 @@ export const getAllUsers = async () => {
   const querySnapshot = await getDocs(usersRef);
   return querySnapshot.docs.map(doc => doc.data());
 };
+
+export const recalculateAllUsersPoints = async () => {
+  const usersRef = collection(db, "users");
+  const usersSnap = await getDocs(usersRef);
+  
+  for (const userDoc of usersSnap.docs) {
+    const userId = userDoc.id;
+    const q = query(collection(db, "predictions"), where("userId", "==", userId));
+    const querySnapshot = await getDocs(q);
+    
+    let totalPoints = 0;
+    querySnapshot.forEach((doc) => {
+      totalPoints += doc.data().points || 0;
+    });
+
+    await updateDoc(doc(db, "users", userId), { points: totalPoints });
+  }
+};
