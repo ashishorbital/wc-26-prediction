@@ -22,6 +22,25 @@ const UserPredictions = () => {
         const userMap = {};
         usersData.forEach(u => userMap[u.userId] = u);
         
+        const getTimeMs = (ts) => {
+          if (!ts) return 0;
+          if (ts.seconds) return ts.seconds * 1000;
+          if (typeof ts === 'string') return new Date(ts).getTime();
+          return 0;
+        };
+
+        predsData.sort((a, b) => {
+          const userA = userMap[a.userId];
+          const userB = userMap[b.userId];
+          const timeA = userA ? getTimeMs(userA.createdAt) : 0;
+          const timeB = userB ? getTimeMs(userB.createdAt) : 0;
+          
+          if (timeA !== timeB) {
+            return timeB - timeA; // Latest registered user at top
+          }
+          return getTimeMs(b.submittedAt) - getTimeMs(a.submittedAt);
+        });
+        
         setMatches(matchMap);
         setUsers(userMap);
         setPredictions(predsData);

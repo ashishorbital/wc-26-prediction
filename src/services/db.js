@@ -172,7 +172,7 @@ export const getUserPredictions = async (userId) => {
 };
 
 export const getAllPredictions = async () => {
-  const q = query(collection(db, "predictions"), orderBy("submittedAt", "desc"));
+  const q = query(collection(db, "predictions"));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => doc.data());
 };
