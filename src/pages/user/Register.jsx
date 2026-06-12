@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../../services/db';
-import { useAuth } from '../../context/AuthContext';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -9,8 +8,8 @@ const Register = () => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,15 +21,33 @@ const Register = () => {
 
     setLoading(true);
     try {
-      const user = await registerUser(name.trim(), mobile, pin);
-      login(user);
-      navigate('/');
+      await registerUser(name.trim(), mobile, pin);
+      setIsSubmitted(true);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  if (isSubmitted) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="hero-section" style={{ paddingBottom: '120px', borderRadius: '0 0 48px 48px' }}>
+          <h1 className="text-center">WC<br/>2026</h1>
+        </div>
+        <div className="container" style={{ display: 'flex', justifyContent: 'center', marginTop: '-80px', position: 'relative', zIndex: 10 }}>
+          <div className="card animate-slide-up text-center" style={{ width: '100%', maxWidth: '400px', padding: '32px' }}>
+            <h3 style={{ color: 'var(--c-royal-blue)', marginBottom: '16px' }}>Registration<br/>Successful!</h3>
+            <p style={{ fontWeight: '500', color: 'var(--c-dark-gray)', lineHeight: '1.6' }}>
+              Your account has been created. Please wait for the Admin to approve your account before you can log in.
+            </p>
+            <Link to="/login" className="btn btn-outline" style={{ display: 'inline-block', marginTop: '24px' }}>Back to Login</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

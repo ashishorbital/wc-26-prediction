@@ -1,22 +1,29 @@
 import { useState, useEffect } from 'react';
-import { getAllPredictions, getMatches } from '../../services/db';
+import { getAllPredictions, getMatches, getAllUsers } from '../../services/db';
 
 const UserPredictions = () => {
   const [predictions, setPredictions] = useState([]);
   const [matches, setMatches] = useState({});
+  const [users, setUsers] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [predsData, matchesData] = await Promise.all([
+        const [predsData, matchesData, usersData] = await Promise.all([
           getAllPredictions(),
-          getMatches()
+          getMatches(),
+          getAllUsers()
         ]);
         
         const matchMap = {};
         matchesData.forEach(m => matchMap[m.id] = m);
+        
+        const userMap = {};
+        usersData.forEach(u => userMap[u.userId] = u);
+        
         setMatches(matchMap);
+        setUsers(userMap);
         setPredictions(predsData);
       } catch (err) {
         console.error(err);
@@ -37,7 +44,7 @@ const UserPredictions = () => {
         <table className="table">
           <thead>
             <tr>
-              <th>User Mobile</th>
+              <th>User</th>
               <th>Match</th>
               <th>Prediction</th>
               <th>Points Awarded</th>
@@ -46,9 +53,12 @@ const UserPredictions = () => {
           <tbody>
             {predictions.map((p, i) => {
               const match = matches[p.matchId];
+              const user = users[p.userId];
               return (
                 <tr key={p.predictionId} className="animate-slide-up" style={{ animationDelay: `${i * 0.05}s` }}>
-                  <td style={{ fontWeight: '700', color: 'var(--c-dark-gray)' }}>{p.userId}</td>
+                  <td style={{ fontWeight: '700', color: 'var(--c-dark-gray)' }}>
+                    {user ? `${user.name} (${p.userId})` : p.userId}
+                  </td>
                   <td style={{ fontWeight: '700', fontSize: '18px' }}>
                     {match ? `${match.teamA} vs ${match.teamB}` : 'Unknown Match'}
                   </td>

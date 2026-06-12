@@ -29,6 +29,7 @@ export const registerUser = async (name, mobile, pin) => {
     mobile,
     pin,
     points: 0,
+    status: "pending", // pending, approved, rejected
     createdAt: serverTimestamp()
   };
 
@@ -47,6 +48,13 @@ export const loginUser = async (mobile, pin) => {
   const userData = userSnap.data();
   if (userData.pin && userData.pin !== pin) {
     throw new Error("Invalid PIN.");
+  }
+  
+  if (userData.status === "pending") {
+    throw new Error("Your account is pending admin approval.");
+  }
+  if (userData.status === "rejected") {
+    throw new Error("Your account registration was rejected.");
   }
   
   return userData;
@@ -89,6 +97,22 @@ export const loginAdmin = async (username, password) => {
   }
   
   return { username };
+};
+
+export const getPendingUsers = async () => {
+  const q = query(collection(db, "users"), where("status", "==", "pending"), orderBy("createdAt", "desc"));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => doc.data());
+};
+
+export const approveUser = async (mobile) => {
+  const userRef = doc(db, "users", mobile);
+  await updateDoc(userRef, { status: "approved" });
+};
+
+export const rejectUser = async (mobile) => {
+  const userRef = doc(db, "users", mobile);
+  await updateDoc(userRef, { status: "rejected" });
 };
 
 
@@ -148,7 +172,7 @@ export const getUserPredictions = async (userId) => {
 };
 
 export const getAllPredictions = async () => {
-  const q = query(collection(db, "predictions"));
+  const q = query(collection(db, "predictions"), orderBy("submittedAt", "desc"));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => doc.data());
 };
@@ -213,5 +237,11 @@ export const getLeaderboard = async () => {
   const q = query(usersRef, orderBy("points", "desc"), limit(10));
   const querySnapshot = await getDocs(q);
   
+  return querySnapshot.docs.map(doc => doc.data());
+};
+
+export const getAllUsers = async () => {
+  const usersRef = collection(db, "users");
+  const querySnapshot = await getDocs(usersRef);
   return querySnapshot.docs.map(doc => doc.data());
 };

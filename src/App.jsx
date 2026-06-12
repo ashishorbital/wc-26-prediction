@@ -18,6 +18,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import ManageMatches from './pages/admin/ManageMatches';
 import UserPredictions from './pages/admin/UserPredictions';
 import AdminLeaderboard from './pages/admin/Leaderboard';
+import PendingUsers from './pages/admin/PendingUsers';
 
 const ProtectedUserRoute = ({ children }) => {
   const { user } = useAuth();
@@ -54,6 +55,7 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="matches" element={<ManageMatches />} />
           <Route path="predictions" element={<UserPredictions />} />
+          <Route path="pending" element={<PendingUsers />} />
           <Route path="leaderboard" element={<AdminLeaderboard />} />
         </Route>
       </Routes>
