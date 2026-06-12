@@ -15,8 +15,11 @@ const UserPredictions = () => {
 
   const formatTime = (ts) => {
     if (!ts) return 'N/A';
-    const date = ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts);
-    return date.toLocaleString();
+    if (typeof ts.toMillis === 'function') return new Date(ts.toMillis()).toLocaleString();
+    if (ts.seconds !== undefined) return new Date(ts.seconds * 1000).toLocaleString();
+    if (ts._seconds !== undefined) return new Date(ts._seconds * 1000).toLocaleString();
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? 'Invalid Time' : d.toLocaleString();
   };
 
   const fetchPage = async (direction = "initial") => {
