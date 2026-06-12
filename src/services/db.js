@@ -11,7 +11,11 @@ import {
   where, 
   orderBy,
   limit,
-  serverTimestamp
+  limitToLast,
+  startAfter,
+  endBefore,
+  serverTimestamp,
+  getCountFromServer
 } from "firebase/firestore";
 
 // -- USERS --
@@ -186,6 +190,31 @@ export const getAllPredictions = async () => {
   return querySnapshot.docs.map(doc => doc.data());
 };
 
+export const getPredictionsPaginated = async (pageSize = 10, lastDocSnap = null, direction = "next", firstDocSnap = null) => {
+  const predictionsRef = collection(db, "predictions");
+  let q;
+
+  if (direction === "next" && lastDocSnap) {
+    q = query(predictionsRef, orderBy("submittedAt", "desc"), startAfter(lastDocSnap), limit(pageSize));
+  } else if (direction === "prev" && firstDocSnap) {
+    q = query(predictionsRef, orderBy("submittedAt", "desc"), endBefore(firstDocSnap), limitToLast(pageSize));
+  } else {
+    // Initial load
+    q = query(predictionsRef, orderBy("submittedAt", "desc"), limit(pageSize));
+  }
+
+  const querySnapshot = await getDocs(q);
+  const docs = querySnapshot.docs;
+  
+  return {
+    predictions: docs.map(doc => doc.data()),
+    firstDocSnap: docs.length > 0 ? docs[0] : null,
+    lastDocSnap: docs.length > 0 ? docs[docs.length - 1] : null,
+    isEmpty: docs.length === 0,
+    hasMore: docs.length === pageSize
+  };
+};
+
 
 // -- RESULTS & LEADERBOARD --
 export const setMatchResult = async (matchId, scoreA, scoreB) => {
@@ -253,6 +282,59 @@ export const getAllUsers = async () => {
   const usersRef = collection(db, "users");
   const querySnapshot = await getDocs(usersRef);
   return querySnapshot.docs.map(doc => doc.data());
+};
+
+export const getTotalUsersCount = async () => {
+  const coll = collection(db, "users");
+  const snapshot = await getCountFromServer(coll);
+  return snapshot.data().count;
+};
+
+export const getUsersPaginated = async (pageSize = 10, lastDocSnap = null, direction = "next", firstDocSnap = null) => {
+  const usersRef = collection(db, "users");
+  let q;
+
+  // We order by name as the default in Dashboard, but Firestore needs an index if we order by name.
+  // Wait, if we just orderBy("createdAt", "desc") it might be easier or we can order by name.
+  // The original dashboard sorted by name locally. We'll order by userId to keep it simple, or 'name' if we create an index.
+  // Let's order by 'createdAt' descending, which is standard for user lists. Or by 'name'.
+  // Actually, let's stick to 'name' ascending. If it fails, we will see an error.
+  
+  if (direction === "next" && lastDocSnap) {
+    q = query(usersRef, orderBy("name", "asc"), startAfter(lastDocSnap), limit(pageSize));
+  } else if (direction === "prev" && firstDocSnap) {
+    q = query(usersRef, orderBy("name", "asc"), endBefore(firstDocSnap), limitToLast(pageSize));
+  } else {
+    q = query(usersRef, orderBy("name", "asc"), limit(pageSize));
+  }
+
+  const querySnapshot = await getDocs(q);
+  const docs = querySnapshot.docs;
+  
+  return {
+    users: docs.map(doc => doc.data()),
+    firstDocSnap: docs.length > 0 ? docs[0] : null,
+    lastDocSnap: docs.length > 0 ? docs[docs.length - 1] : null,
+    isEmpty: docs.length === 0,
+    hasMore: docs.length === pageSize
+  };
+};
+
+
+export const getUsersByIds = async (userIds) => {
+  if (!userIds || userIds.length === 0) return [];
+  
+  const uniqueIds = [...new Set(userIds)];
+  const results = [];
+  
+  for (let i = 0; i < uniqueIds.length; i += 10) {
+    const chunk = uniqueIds.slice(i, i + 10);
+    const q = query(collection(db, "users"), where("userId", "in", chunk));
+    const snap = await getDocs(q);
+    snap.forEach(doc => results.push(doc.data()));
+  }
+  
+  return results;
 };
 
 export const recalculateAllUsersPoints = async () => {

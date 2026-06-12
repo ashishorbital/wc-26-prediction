@@ -1,36 +1,81 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getAllUsers } from '../../services/db';
+import { getUsersPaginated, getTotalUsersCount } from '../../services/db';
 
 const AdminDashboard = () => {
   const { admin } = useAuth();
 
   const [users, setUsers] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [loadingUsers, setLoadingUsers] = useState(true);
 
+  // Pagination state
+  const [pageDocs, setPageDocs] = useState([]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const pageSize = 10;
+
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchTotal = async () => {
       try {
-        const data = await getAllUsers();
-        const sortedData = data.sort((a, b) => {
-          const nameA = (a.name || '').toLowerCase();
-          const nameB = (b.name || '').toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-        setUsers(sortedData);
+        const count = await getTotalUsersCount();
+        setTotalUsers(count);
       } catch (err) {
-        console.error("Error fetching users:", err);
-      } finally {
-        setLoadingUsers(false);
+        console.error("Error fetching total users:", err);
       }
     };
-    fetchUsers();
+    fetchTotal();
+  }, []);
+
+  const fetchPage = async (direction = "initial") => {
+    setLoadingUsers(true);
+    try {
+      let lastDoc = null;
+      let firstDoc = null;
+
+      if (direction === "next" && pageDocs[pageIndex]) {
+        lastDoc = pageDocs[pageIndex].last;
+      } else if (direction === "prev" && pageDocs[pageIndex - 1]) {
+        firstDoc = pageDocs[pageIndex - 1].first;
+      }
+
+      const { users: fetchedUsers, firstDocSnap, lastDocSnap, isEmpty, hasMore: more } = 
+        await getUsersPaginated(pageSize, lastDoc, direction, firstDoc);
+
+      if (isEmpty && direction !== "initial") {
+        setLoadingUsers(false);
+        return;
+      }
+
+      setUsers(fetchedUsers);
+      setHasMore(more);
+
+      const newPageDocs = [...pageDocs];
+      let newIdx = pageIndex;
+      if (direction === "next") newIdx = pageIndex + 1;
+      else if (direction === "prev") newIdx = pageIndex - 1;
+      else newIdx = 0; // initial
+
+      newPageDocs[newIdx] = { first: firstDocSnap, last: lastDocSnap };
+      setPageDocs(newPageDocs);
+      setPageIndex(newIdx);
+
+    } catch (err) {
+      console.error("Error fetching users page:", err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPage("initial");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ color: 'var(--c-electric-purple)', margin: 0 }}>Registered Users ({users.length})</h2>
+        <h2 style={{ color: 'var(--c-electric-purple)', margin: 0 }}>Registered Users ({totalUsers})</h2>
         <p style={{ margin: 0, fontWeight: '500', color: 'var(--c-dark-gray)' }}>
           Welcome, {admin.username}
         </p>
@@ -38,7 +83,7 @@ const AdminDashboard = () => {
 
       <div className="card" style={{ borderTop: '8px solid #0dcaf0', marginBottom: '40px' }}>
         {loadingUsers ? (
-          <p className="mt-3" style={{ color: 'var(--c-dark-gray)' }}>Loading users...</p>
+          <p className="mt-3 text-center" style={{ color: 'var(--c-dark-gray)' }}>Loading users...</p>
         ) : (
           <div className="table-responsive" style={{ overflowX: 'auto', width: '100%' }}>
             <table className="table table-striped table-hover w-100" style={{ minWidth: '600px', margin: 0 }}>
@@ -68,6 +113,25 @@ const AdminDashboard = () => {
             </table>
           </div>
         )}
+      </div>
+      
+      {/* Pagination Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+        <button 
+          className="btn btn-secondary" 
+          onClick={() => fetchPage("prev")} 
+          disabled={pageIndex === 0 || loadingUsers}
+        >
+          Previous
+        </button>
+        <span style={{ alignSelf: 'center', fontWeight: 'bold' }}>Page {pageIndex + 1}</span>
+        <button 
+          className="btn btn-primary" 
+          onClick={() => fetchPage("next")} 
+          disabled={!hasMore || loadingUsers}
+        >
+          Next
+        </button>
       </div>
     </div>
   );
