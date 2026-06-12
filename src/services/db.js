@@ -15,7 +15,8 @@ import {
   startAfter,
   endBefore,
   serverTimestamp,
-  getCountFromServer
+  getCountFromServer,
+  increment
 } from "firebase/firestore";
 
 // -- USERS --
@@ -228,31 +229,29 @@ export const setMatchResult = async (matchId, scoreA, scoreB) => {
   // Calculate points for all predictions for this match
   const q = query(collection(db, "predictions"), where("matchId", "==", matchId));
   const querySnapshot = await getDocs(q);
-  
-  const userPointUpdates = {};
 
   for (const predictionDoc of querySnapshot.docs) {
     const prediction = predictionDoc.data();
-    let points = 0;
+    let oldPoints = prediction.points || 0;
+    let newPoints = 0;
     
     // Rule: Exact score prediction = 1 point, otherwise 0
     if (prediction.predictedA === parseInt(scoreA) && prediction.predictedB === parseInt(scoreB)) {
-      points = 1;
+      newPoints = 1;
     }
     
-    // Update prediction points
-    await updateDoc(predictionDoc.ref, { points });
-
-    // We need to recalculate total points for this user later, or increment here
-    // But since results can be corrected, it's safer to recalculate total points from all predictions
-    if (!userPointUpdates[prediction.userId]) {
-      userPointUpdates[prediction.userId] = true;
+    const pointDiff = newPoints - oldPoints;
+    
+    // Update prediction points if they changed
+    if (oldPoints !== newPoints) {
+      await updateDoc(predictionDoc.ref, { points: newPoints });
     }
-  }
 
-  // Recalculate total points for affected users
-  for (const userId of Object.keys(userPointUpdates)) {
-    await recalculateUserPoints(userId);
+    // Safely update user's total points only by the difference
+    if (pointDiff !== 0) {
+      const userRef = doc(db, "users", prediction.userId);
+      await updateDoc(userRef, { points: increment(pointDiff) });
+    }
   }
 };
 
