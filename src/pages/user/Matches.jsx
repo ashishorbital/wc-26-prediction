@@ -1,0 +1,142 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { getMatches, submitPrediction, getUserPredictions } from '../../services/db';
+import { format, isBefore, parseISO } from 'date-fns';
+
+const Matches = () => {
+  const { user } = useAuth();
+  const [matches, setMatches] = useState([]);
+  const [predictions, setPredictions] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, [user]);
+
+  const fetchData = async () => {
+    try {
+      const [matchesData, userPreds] = await Promise.all([
+        getMatches(),
+        getUserPredictions(user.mobile)
+      ]);
+      setMatches(matchesData);
+      
+      const predMap = {};
+      userPreds.forEach(p => {
+        predMap[p.matchId] = { predictedA: p.predictedA, predictedB: p.predictedB };
+      });
+      setPredictions(predMap);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePredict = async (matchId, teamA, teamB, dt) => {
+    if (!isBefore(new Date(), parseISO(dt))) {
+      alert("Match has already started!");
+      return;
+    }
+
+    const scoreA = prompt(`Predict score for ${teamA}:`, predictions[matchId]?.predictedA || 0);
+    if (scoreA === null) return;
+    const scoreB = prompt(`Predict score for ${teamB}:`, predictions[matchId]?.predictedB || 0);
+    if (scoreB === null) return;
+
+    if (isNaN(scoreA) || isNaN(scoreB) || scoreA < 0 || scoreB < 0) {
+      alert("Please enter valid positive numbers.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await submitPrediction(user.mobile, matchId, scoreA, scoreB);
+      setPredictions(prev => ({
+        ...prev,
+        [matchId]: { predictedA: parseInt(scoreA), predictedB: parseInt(scoreB) }
+      }));
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) return <div className="text-center mt-4">Loading matches...</div>;
+
+  return (
+    <div>
+      <h2 className="mb-4">Match<br/><span style={{ color: 'var(--c-royal-blue)' }}>Schedule</span></h2>
+      <div className="grid-12">
+        {matches.map((match, idx) => {
+          const isStarted = !isBefore(new Date(), parseISO(match.matchDateTime));
+          const pred = predictions[match.id];
+          const isCompleted = match.status === 'completed';
+
+          return (
+            <div key={match.id} className="card col-span-12 md:col-span-6" style={{ 
+              textAlign: 'center', 
+              borderTop: `8px solid ${idx % 2 === 0 ? 'var(--c-bright-red)' : 'var(--c-royal-blue)'}` 
+            }}>
+              <div style={{ fontWeight: '700', color: 'var(--c-dark-gray)', marginBottom: '24px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {format(parseISO(match.matchDateTime), 'MMM dd, yyyy - HH:mm')}
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <div style={{ flex: 1, fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '900', lineHeight: 1 }}>{match.teamA}</div>
+                <div style={{ 
+                  padding: '8px 16px', 
+                  background: 'var(--c-light-gray)', 
+                  borderRadius: '16px',
+                  color: 'var(--c-black)', 
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: '900',
+                  margin: '0 16px'
+                }}>VS</div>
+                <div style={{ flex: 1, fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '900', lineHeight: 1 }}>{match.teamB}</div>
+              </div>
+
+              {isCompleted ? (
+                <div style={{ marginBottom: '24px', padding: '16px', background: 'var(--c-light-gray)', borderRadius: '16px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: '700', textTransform: 'uppercase', fontSize: '14px', color: 'var(--c-dark-teal)' }}>Final Score</p>
+                  <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: '900', fontSize: '48px', color: 'var(--c-black)', lineHeight: 1 }}>{match.scoreA} - {match.scoreB}</p>
+                </div>
+              ) : null}
+
+              {pred ? (
+                <div style={{ marginBottom: '24px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: '700', textTransform: 'uppercase', fontSize: '14px', color: 'var(--c-royal-blue)' }}>Your Prediction</p>
+                  <div style={{ display: 'inline-block', padding: '12px 32px', border: '2px solid var(--c-royal-blue)', borderRadius: '24px' }}>
+                    <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: '900', fontSize: '32px', color: 'var(--c-royal-blue)', lineHeight: 1 }}>{pred.predictedA} - {pred.predictedB}</p>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ marginBottom: '24px', fontWeight: '700', color: 'var(--c-dark-gray)' }}>No prediction submitted</p>
+              )}
+
+              {!isStarted && !isCompleted && (
+                <button 
+                  className={`btn ${pred ? 'btn-outline' : 'btn-primary'}`}
+                  style={{ width: '100%' }}
+                  onClick={() => handlePredict(match.id, match.teamA, match.teamB, match.matchDateTime)}
+                  disabled={submitting}
+                >
+                  {pred ? 'Update Prediction' : 'Predict Now'}
+                </button>
+              )}
+              {isStarted && !isCompleted && (
+                <div style={{ padding: '12px', background: 'var(--c-light-gray)', borderRadius: '16px', color: 'var(--c-bright-red)', fontWeight: '800', textTransform: 'uppercase' }}>
+                  Match Locked
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default Matches;

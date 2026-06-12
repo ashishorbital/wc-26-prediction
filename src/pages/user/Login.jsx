@@ -1,0 +1,72 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { loginUser } from '../../services/db';
+import { useAuth } from '../../context/AuthContext';
+
+const Login = () => {
+  const [mobile, setMobile] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!/^\d{10}$/.test(mobile)) {
+      return setError('Mobile number must be exactly 10 digits');
+    }
+
+    setLoading(true);
+    try {
+      const user = await loginUser(mobile);
+      login(user);
+      navigate('/');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="hero-section" style={{ paddingBottom: '120px', borderRadius: '0 0 48px 48px' }}>
+        <h1 className="text-center">WC<br/>2026</h1>
+      </div>
+      
+      <div className="container" style={{ display: 'flex', justifyContent: 'center', marginTop: '-80px', position: 'relative', zIndex: 10 }}>
+        <div className="card animate-slide-up" style={{ width: '100%', maxWidth: '400px', padding: '32px' }}>
+          <h3 className="text-center mb-4" style={{ color: 'var(--c-royal-blue)' }}>Welcome Back</h3>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">Mobile Number</label>
+              <input 
+                type="tel" 
+                className="form-control" 
+                value={mobile} 
+                onChange={(e) => setMobile(e.target.value)} 
+                placeholder="10 digit number"
+                maxLength={10}
+              />
+            </div>
+
+            {error && <p className="error-text mb-3 text-center">{error}</p>}
+
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', background: 'var(--c-royal-blue)' }} disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
+
+          <p className="text-center mt-4" style={{ fontWeight: 700, color: 'var(--c-dark-gray)' }}>
+            New user? <Link to="/register" style={{ color: 'var(--c-electric-purple)' }}>Register</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
