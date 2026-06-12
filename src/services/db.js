@@ -192,6 +192,12 @@ export const getAllPredictions = async () => {
   return querySnapshot.docs.map(doc => doc.data());
 };
 
+export const getPredictionsByMatch = async (matchId) => {
+  const q = query(collection(db, "predictions"), where("matchId", "==", matchId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => doc.data());
+};
+
 export const getPredictionsPaginated = async (pageSize = 10, lastDocSnap = null, direction = "next", firstDocSnap = null) => {
   const predictionsRef = collection(db, "predictions");
   let q;

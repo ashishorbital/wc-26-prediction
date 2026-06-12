@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMatches, setMatchResult, updateMatch } from '../../services/db';
+import { getMatches, setMatchResult, updateMatch, getPredictionsByMatch, getUsersByIds } from '../../services/db';
 import { format, parseISO, isBefore } from 'date-fns';
 
 const ManageMatches = () => {
@@ -69,6 +69,42 @@ const ManageMatches = () => {
     }
   };
 
+  const handleExportPredictions = async (match) => {
+    try {
+      const preds = await getPredictionsByMatch(match.id);
+      if (preds.length === 0) {
+        alert("No predictions for this match yet.");
+        return;
+      }
+      
+      const userIds = preds.map(p => p.userId);
+      const users = await getUsersByIds(userIds);
+      
+      const userMap = {};
+      users.forEach(u => {
+        userMap[u.userId] = u;
+      });
+
+      let csv = "Name,Mobile,Predicted Team A,Predicted Team B,Points\n";
+      preds.forEach(p => {
+        const u = userMap[p.userId] || { name: "Unknown", mobile: p.userId };
+        csv += `"${u.name}","${u.mobile}",${p.predictedA},${p.predictedB},${p.points || 0}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Predictions_${match.teamA}_vs_${match.teamB}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch(err) {
+      alert("Failed to export: " + err.message);
+    }
+  };
+
   if (loading) return <div>Loading matches...</div>;
 
   return (
@@ -105,6 +141,9 @@ const ManageMatches = () => {
                   {m.status === 'completed' ? `${m.scoreA} - ${m.scoreB}` : '-'}
                 </td>
                 <td style={{ textAlign: 'right' }}>
+                  <button onClick={() => handleExportPredictions(m)} className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '14px', marginRight: '8px', color: 'var(--c-dark-gray)', borderColor: 'var(--c-dark-gray)' }}>
+                    Export
+                  </button>
                   <button onClick={() => handleSetResult(m.id)} className="btn btn-secondary" style={{ padding: '8px 16px', fontSize: '14px', marginRight: '8px', background: 'var(--c-neon-green)', color: 'var(--c-dark-teal)' }}>
                     Set Result
                   </button>
