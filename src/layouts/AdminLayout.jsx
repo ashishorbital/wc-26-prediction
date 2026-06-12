@@ -13,12 +13,12 @@ const AdminLayout = () => {
   };
 
   const navItems = [
-    { path: '/admin', label: 'Registered Users', icon: <Settings size={20} /> },
+    { path: '/admin/pending', label: 'Pending Users', icon: <UserCheck size={20} /> },
     { path: '/admin/add-match', label: 'Add Match', icon: <PlusCircle size={20} /> },
     { path: '/admin/matches', label: 'Set Results', icon: <Calendar size={20} /> },
     { path: '/admin/predictions', label: 'Predictions', icon: <Users size={20} /> },
-    { path: '/admin/pending', label: 'Pending Users', icon: <UserCheck size={20} /> },
     { path: '/admin/leaderboard', label: 'Leaderboard', icon: <Trophy size={20} /> },
+    { path: '/admin', label: 'Registered Users', icon: <Settings size={20} /> },
   ];
 
   return (
