@@ -61,12 +61,26 @@ const UserPredictions = () => {
 
       const getTimeMs = (ts) => {
         if (!ts) return 0;
-        if (ts.seconds) return ts.seconds * 1000;
+        if (typeof ts.toMillis === 'function') return ts.toMillis();
+        if (ts.seconds !== undefined) return ts.seconds * 1000;
+        if (ts._seconds !== undefined) return ts._seconds * 1000;
         if (typeof ts === 'string') return new Date(ts).getTime();
-        return ts;
+        if (typeof ts === 'number') return ts;
+        return 0;
       };
 
-      predsData.sort((a, b) => getTimeMs(b.submittedAt) - getTimeMs(a.submittedAt));
+      predsData.sort((a, b) => {
+        const timeA = getTimeMs(a.submittedAt);
+        const timeB = getTimeMs(b.submittedAt);
+        return timeB - timeA;
+      });
+
+      // Debug log so we can see what's happening
+      console.log("Sorted predictions for page:", predsData.map(p => ({
+        id: p.predictionId,
+        rawTs: p.submittedAt,
+        parsedMs: getTimeMs(p.submittedAt)
+      })));
 
       setPredictions(predsData);
       setHasMore(more);
