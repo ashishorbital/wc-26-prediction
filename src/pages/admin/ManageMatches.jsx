@@ -13,7 +13,7 @@ const ManageMatches = () => {
   const fetchMatches = async () => {
     try {
       const data = await getMatches();
-      setMatches(data);
+      setMatches(data.reverse());
     } catch (err) {
       console.error(err);
     } finally {

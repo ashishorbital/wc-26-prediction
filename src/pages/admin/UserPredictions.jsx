@@ -36,7 +36,7 @@ const UserPredictions = () => {
           const timeB = userB ? getTimeMs(userB.createdAt) : 0;
           
           if (timeA !== timeB) {
-            return timeB - timeA; // Latest registered user at top
+            return timeA - timeB; // Earliest registered user at top
           }
           return getTimeMs(b.submittedAt) - getTimeMs(a.submittedAt);
         });

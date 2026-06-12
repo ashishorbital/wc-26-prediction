@@ -2,14 +2,25 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../../services/db';
 import { useAuth } from '../../context/AuthContext';
+import { X } from 'lucide-react';
 
 const Login = () => {
   const [mobile, setMobile] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showAd, setShowAd] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  useEffect(() => {
+    // Show ad only once per session
+    const hasSeenAd = sessionStorage.getItem('hasSeenAd');
+    if (!hasSeenAd) {
+      setShowAd(true);
+      sessionStorage.setItem('hasSeenAd', 'true');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,6 +92,57 @@ const Login = () => {
           </p>
         </div>
       </div>
+
+      {/* Advertisement Modal */}
+      {showAd && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          zIndex: 9999,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '24px'
+        }}>
+          <div className="animate-slide-up" style={{
+            position: 'relative',
+            maxWidth: '500px',
+            width: '100%',
+            background: 'var(--c-white)',
+            borderRadius: '24px',
+            overflow: 'hidden',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.5)'
+          }}>
+            <button 
+              onClick={() => setShowAd(false)}
+              style={{
+                position: 'absolute',
+                top: '12px', right: '12px',
+                background: 'rgba(255,255,255,0.9)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '36px', height: '36px',
+                display: 'flex', justifyContent: 'center', alignItems: 'center',
+                cursor: 'pointer',
+                zIndex: 10,
+                color: 'var(--c-black)'
+              }}
+            >
+              <X size={20} />
+            </button>
+            <img 
+              src="/poster.jpg" 
+              alt="Advertisement" 
+              style={{ width: '100%', display: 'block', maxHeight: '85vh', objectFit: 'contain' }}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/400x600?text=Please+add+poster.jpg+to+public+folder";
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
