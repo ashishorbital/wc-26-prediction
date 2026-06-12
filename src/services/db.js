@@ -31,6 +31,7 @@ export const registerUser = async (name, mobile, pin) => {
   const userData = {
     userId: mobile,
     name,
+    nameLower: name.toLowerCase(),
     mobile,
     pin,
     points: 0,
@@ -300,11 +301,11 @@ export const getUsersPaginated = async (pageSize = 10, lastDocSnap = null, direc
   // Actually, let's stick to 'name' ascending. If it fails, we will see an error.
   
   if (direction === "next" && lastDocSnap) {
-    q = query(usersRef, orderBy("name", "asc"), startAfter(lastDocSnap), limit(pageSize));
+    q = query(usersRef, orderBy("nameLower", "asc"), startAfter(lastDocSnap), limit(pageSize));
   } else if (direction === "prev" && firstDocSnap) {
-    q = query(usersRef, orderBy("name", "asc"), endBefore(firstDocSnap), limitToLast(pageSize));
+    q = query(usersRef, orderBy("nameLower", "asc"), endBefore(firstDocSnap), limitToLast(pageSize));
   } else {
-    q = query(usersRef, orderBy("name", "asc"), limit(pageSize));
+    q = query(usersRef, orderBy("nameLower", "asc"), limit(pageSize));
   }
 
   const querySnapshot = await getDocs(q);
