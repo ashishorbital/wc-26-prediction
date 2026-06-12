@@ -30,8 +30,8 @@ const UserPredictions = () => {
       
       if (direction === "next" && pageDocs[pageIndex]) {
         lastDoc = pageDocs[pageIndex].last;
-      } else if (direction === "prev" && pageDocs[pageIndex - 1]) {
-        firstDoc = pageDocs[pageIndex - 1].first;
+      } else if (direction === "prev" && pageDocs[pageIndex]) {
+        firstDoc = pageDocs[pageIndex].first;
       }
 
       const { predictions: predsData, firstDocSnap, lastDocSnap, isEmpty, hasMore: more } = 
