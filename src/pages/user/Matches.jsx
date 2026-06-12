@@ -10,6 +10,7 @@ const Matches = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [visibleCount, setVisibleCount] = useState(4);
+  const [activeTab, setActiveTab] = useState('predict');
 
   useEffect(() => {
     fetchData();
@@ -100,8 +101,10 @@ const Matches = () => {
 
   if (loading) return <div className="text-center mt-4">Loading matches...</div>;
 
-  const toPredictMatches = matches.filter(m => !predictions[m.id]);
+  const now = new Date();
+  const toPredictMatches = matches.filter(m => !predictions[m.id] && isBefore(now, parseISO(m.matchDateTime)));
   const predictedMatches = matches.filter(m => predictions[m.id]);
+  const missedMatches = matches.filter(m => !predictions[m.id] && !isBefore(now, parseISO(m.matchDateTime)));
 
   const visiblePredicted = predictedMatches.slice(0, visibleCount);
   const hasMorePredicted = visibleCount < predictedMatches.length;
@@ -177,38 +180,85 @@ const Matches = () => {
 
   return (
     <div>
-      <h2 className="mb-4">To <span style={{ color: 'var(--c-royal-blue)' }}>Predict</span></h2>
-      <div className="grid-12">
-        {toPredictMatches.length === 0 ? (
-          <div className="col-span-12" style={{ padding: '24px', textAlign: 'center', color: 'var(--c-dark-gray)', background: 'var(--c-light-gray)', borderRadius: '16px' }}>
-            <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🎉</span>
-            You have predicted all upcoming matches!
-          </div>
-        ) : (
-          toPredictMatches.map(renderMatchCard)
-        )}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', paddingBottom: '8px' }}>
+        <button 
+          className={`btn ${activeTab === 'predict' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setActiveTab('predict')}
+          style={{ flex: 1, whiteSpace: 'nowrap' }}
+        >
+          Predict
+        </button>
+        <button 
+          className={`btn ${activeTab === 'predicted' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setActiveTab('predicted')}
+          style={{ flex: 1, whiteSpace: 'nowrap' }}
+        >
+          Predicted
+        </button>
+        <button 
+          className={`btn ${activeTab === 'missed' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setActiveTab('missed')}
+          style={{ flex: 1, whiteSpace: 'nowrap' }}
+        >
+          Missed
+        </button>
       </div>
 
-      <h2 className="mb-4" style={{ marginTop: '48px' }}>Already <span style={{ color: 'var(--c-royal-blue)' }}>Predicted</span></h2>
-      <div className="grid-12">
-        {visiblePredicted.length === 0 ? (
-          <div className="col-span-12" style={{ padding: '24px', textAlign: 'center', color: 'var(--c-dark-gray)', background: 'var(--c-light-gray)', borderRadius: '16px' }}>
-            You haven't made any predictions yet.
+      {activeTab === 'predict' && (
+        <div>
+          <h2 className="mb-4">To <span style={{ color: 'var(--c-royal-blue)' }}>Predict</span></h2>
+          <div className="grid-12">
+            {toPredictMatches.length === 0 ? (
+              <div className="col-span-12" style={{ padding: '24px', textAlign: 'center', color: 'var(--c-dark-gray)', background: 'var(--c-light-gray)', borderRadius: '16px' }}>
+                <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🎉</span>
+                You have predicted all upcoming matches!
+              </div>
+            ) : (
+              toPredictMatches.map(renderMatchCard)
+            )}
           </div>
-        ) : (
-          visiblePredicted.map(renderMatchCard)
-        )}
-      </div>
-      
-      {hasMorePredicted && (
-        <div style={{ textAlign: 'center', marginTop: '32px' }}>
-          <button 
-            className="btn btn-secondary" 
-            onClick={handleLoadMore}
-            style={{ padding: '12px 32px' }}
-          >
-            Load More
-          </button>
+        </div>
+      )}
+
+      {activeTab === 'predicted' && (
+        <div>
+          <h2 className="mb-4">Already <span style={{ color: 'var(--c-royal-blue)' }}>Predicted</span></h2>
+          <div className="grid-12">
+            {visiblePredicted.length === 0 ? (
+              <div className="col-span-12" style={{ padding: '24px', textAlign: 'center', color: 'var(--c-dark-gray)', background: 'var(--c-light-gray)', borderRadius: '16px' }}>
+                You haven't made any predictions yet.
+              </div>
+            ) : (
+              visiblePredicted.map(renderMatchCard)
+            )}
+          </div>
+          
+          {hasMorePredicted && (
+            <div style={{ textAlign: 'center', marginTop: '32px' }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={handleLoadMore}
+                style={{ padding: '12px 32px' }}
+              >
+                Load More
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'missed' && (
+        <div>
+          <h2 className="mb-4"><span style={{ color: 'var(--c-bright-red)' }}>Missed</span></h2>
+          <div className="grid-12">
+            {missedMatches.length === 0 ? (
+              <div className="col-span-12" style={{ padding: '24px', textAlign: 'center', color: 'var(--c-dark-gray)', background: 'var(--c-light-gray)', borderRadius: '16px' }}>
+                No missed predictions. Great job!
+              </div>
+            ) : (
+              missedMatches.map(renderMatchCard)
+            )}
+          </div>
         </div>
       )}
     </div>
