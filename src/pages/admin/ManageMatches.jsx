@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
-import { getMatches, createMatch, updateMatch, setMatchResult, deleteMatch } from '../../services/db';
+import { getMatches, setMatchResult, deleteMatch } from '../../services/db';
 import { format, parseISO } from 'date-fns';
 
 const ManageMatches = () => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Form State
-  const [teamA, setTeamA] = useState('');
-  const [teamB, setTeamB] = useState('');
-  const [matchDate, setMatchDate] = useState('');
-  const [matchTime, setMatchTime] = useState('');
 
   useEffect(() => {
     fetchMatches();
@@ -24,21 +18,6 @@ const ManageMatches = () => {
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCreateMatch = async (e) => {
-    e.preventDefault();
-    try {
-      const dateTimeStr = `${matchDate}T${matchTime}:00`;
-      await createMatch({
-        teamA, teamB,
-        matchDateTime: new Date(dateTimeStr).toISOString(),
-      });
-      setTeamA(''); setTeamB(''); setMatchDate(''); setMatchTime('');
-      fetchMatches();
-    } catch (err) {
-      alert(err.message);
     }
   };
 
@@ -73,36 +52,11 @@ const ManageMatches = () => {
     }
   };
 
+  if (loading) return <div>Loading matches...</div>;
+
   return (
     <div>
-      <h2 className="mb-4" style={{ color: 'var(--c-royal-blue)' }}>Manage Matches</h2>
-      
-      <div className="card mb-4" style={{ borderTop: '8px solid var(--c-royal-blue)' }}>
-        <h3 className="mb-3">Add New Match</h3>
-        <form onSubmit={handleCreateMatch} className="grid-12" style={{ alignItems: 'flex-end' }}>
-          <div className="form-group col-span-12 md:col-span-3" style={{ margin: 0 }}>
-            <label className="form-label">Team A</label>
-            <input type="text" className="form-control" value={teamA} onChange={e => setTeamA(e.target.value)} required />
-          </div>
-          <div className="form-group col-span-12 md:col-span-3" style={{ margin: 0 }}>
-            <label className="form-label">Team B</label>
-            <input type="text" className="form-control" value={teamB} onChange={e => setTeamB(e.target.value)} required />
-          </div>
-          <div className="form-group col-span-12 md:col-span-2" style={{ margin: 0 }}>
-            <label className="form-label">Date</label>
-            <input type="date" className="form-control" value={matchDate} onChange={e => setMatchDate(e.target.value)} required />
-          </div>
-          <div className="form-group col-span-12 md:col-span-2" style={{ margin: 0 }}>
-            <label className="form-label">Time</label>
-            <input type="time" className="form-control" value={matchTime} onChange={e => setMatchTime(e.target.value)} required />
-          </div>
-          <div className="col-span-12 md:col-span-2">
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', background: 'var(--c-royal-blue)' }}>
-              Add
-            </button>
-          </div>
-        </form>
-      </div>
+      <h2 className="mb-4" style={{ color: 'var(--c-royal-blue)' }}>Set Results</h2>
 
       <div className="table-container">
         <table className="table">

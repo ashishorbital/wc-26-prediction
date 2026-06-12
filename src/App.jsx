@@ -16,6 +16,7 @@ import Leaderboard from './pages/user/Leaderboard';
 import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import ManageMatches from './pages/admin/ManageMatches';
+import AddMatch from './pages/admin/AddMatch';
 import UserPredictions from './pages/admin/UserPredictions';
 import AdminLeaderboard from './pages/admin/Leaderboard';
 import PendingUsers from './pages/admin/PendingUsers';
@@ -54,6 +55,7 @@ function App() {
         <Route path="/admin" element={<ProtectedAdminRoute><AdminLayout /></ProtectedAdminRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="matches" element={<ManageMatches />} />
+          <Route path="add-match" element={<AddMatch />} />
           <Route path="predictions" element={<UserPredictions />} />
           <Route path="pending" element={<PendingUsers />} />
           <Route path="leaderboard" element={<AdminLeaderboard />} />

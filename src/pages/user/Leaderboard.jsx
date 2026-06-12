@@ -37,7 +37,7 @@ const Leaderboard = () => {
 
   return (
     <div>
-      <h2 className="mb-4">Global<br/><span style={{ color: 'var(--c-electric-purple)' }}>Rankings</span></h2>
+      <h2 className="mb-4">Rankings</h2>
       
       <div className="table-container">
         <table className="table">

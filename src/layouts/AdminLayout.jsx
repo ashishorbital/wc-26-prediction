@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Settings, Users, Calendar, Trophy, LogOut, UserCheck } from 'lucide-react';
+import { Settings, Users, Calendar, Trophy, LogOut, UserCheck, PlusCircle } from 'lucide-react';
 
 const AdminLayout = () => {
   const { adminLogout } = useAuth();
@@ -14,7 +14,8 @@ const AdminLayout = () => {
 
   const navItems = [
     { path: '/admin', label: 'Overview', icon: <Settings size={20} /> },
-    { path: '/admin/matches', label: 'Matches', icon: <Calendar size={20} /> },
+    { path: '/admin/add-match', label: 'Add Match', icon: <PlusCircle size={20} /> },
+    { path: '/admin/matches', label: 'Set Results', icon: <Calendar size={20} /> },
     { path: '/admin/predictions', label: 'Predictions', icon: <Users size={20} /> },
     { path: '/admin/pending', label: 'Pending Users', icon: <UserCheck size={20} /> },
     { path: '/admin/leaderboard', label: 'Leaderboard', icon: <Trophy size={20} /> },

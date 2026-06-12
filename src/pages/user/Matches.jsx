@@ -20,7 +20,24 @@ const Matches = () => {
         getMatches(),
         getUserPredictions(user.mobile)
       ]);
-      setMatches(matchesData);
+      const sortedMatches = [...matchesData].sort((a, b) => {
+        const timeA = parseISO(a.matchDateTime).getTime();
+        const timeB = parseISO(b.matchDateTime).getTime();
+        const now = Date.now();
+        const startedA = now >= timeA;
+        const startedB = now >= timeB;
+        
+        if (startedA && !startedB) return 1;
+        if (!startedA && startedB) return -1;
+        
+        if (!startedA && !startedB) {
+          return timeA - timeB; // ascending (closest upcoming first)
+        }
+        
+        // both started
+        return timeB - timeA; // descending (most recently started first)
+      });
+      setMatches(sortedMatches);
       
       const predMap = {};
       userPreds.forEach(p => {
@@ -121,20 +138,9 @@ const Matches = () => {
                 </div>
               ) : null}
 
-              {pred ? (
-                <div style={{ marginBottom: '24px' }}>
-                  <p style={{ margin: '0 0 8px 0', fontWeight: '700', textTransform: 'uppercase', fontSize: '14px', color: 'var(--c-royal-blue)' }}>Your Prediction</p>
-                  <div style={{ display: 'inline-block', padding: '12px 32px', border: '2px solid var(--c-royal-blue)', borderRadius: '24px' }}>
-                    <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: '900', fontSize: '32px', color: 'var(--c-royal-blue)', lineHeight: 1 }}>{pred.predictedA} - {pred.predictedB}</p>
-                  </div>
-                </div>
-              ) : (
-                <p style={{ marginBottom: '24px', fontWeight: '700', color: 'var(--c-dark-gray)' }}>No prediction submitted</p>
-              )}
-
               {!isStarted && !isCompleted && (
                 <button 
-                  className={`btn ${pred ? 'btn-outline' : 'btn-primary'}`}
+                  className={`btn ${pred ? 'btn-outline' : 'btn-primary'} mb-4`}
                   style={{ width: '100%' }}
                   onClick={() => handlePredict(match.id, match.teamA, match.teamB, match.matchDateTime)}
                   disabled={submitting}
@@ -143,9 +149,20 @@ const Matches = () => {
                 </button>
               )}
               {isStarted && !isCompleted && (
-                <div style={{ padding: '12px', background: 'var(--c-light-gray)', borderRadius: '16px', color: 'var(--c-bright-red)', fontWeight: '800', textTransform: 'uppercase' }}>
+                <div style={{ padding: '12px', background: 'var(--c-light-gray)', borderRadius: '16px', color: 'var(--c-bright-red)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '24px' }}>
                   Match Locked
                 </div>
+              )}
+
+              {pred ? (
+                <div>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: '700', textTransform: 'uppercase', fontSize: '14px', color: 'var(--c-royal-blue)' }}>Your Prediction</p>
+                  <div style={{ display: 'inline-block', padding: '12px 32px', border: '2px solid var(--c-royal-blue)', borderRadius: '24px' }}>
+                    <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: '900', fontSize: '32px', color: 'var(--c-royal-blue)', lineHeight: 1 }}>{pred.predictedA} - {pred.predictedB}</p>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ fontWeight: '700', color: 'var(--c-dark-gray)' }}>No prediction submitted</p>
               )}
             </div>
           );
