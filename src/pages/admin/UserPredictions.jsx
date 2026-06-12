@@ -30,14 +30,6 @@ const UserPredictions = () => {
         };
 
         predsData.sort((a, b) => {
-          const userA = userMap[a.userId];
-          const userB = userMap[b.userId];
-          const timeA = userA ? getTimeMs(userA.createdAt) : 0;
-          const timeB = userB ? getTimeMs(userB.createdAt) : 0;
-          
-          if (timeA !== timeB) {
-            return timeA - timeB; // Earliest registered user at top
-          }
           return getTimeMs(b.submittedAt) - getTimeMs(a.submittedAt);
         });
         
