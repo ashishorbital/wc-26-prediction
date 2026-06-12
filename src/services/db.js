@@ -100,9 +100,18 @@ export const loginAdmin = async (username, password) => {
 };
 
 export const getPendingUsers = async () => {
-  const q = query(collection(db, "users"), where("status", "==", "pending"), orderBy("createdAt", "desc"));
+  const q = query(collection(db, "users"), where("status", "==", "pending"));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => doc.data());
+  const users = querySnapshot.docs.map(doc => doc.data());
+  
+  // Sort descending by createdAt to avoid requiring a composite index in Firestore
+  return users.sort((a, b) => {
+    const getMs = (date) => {
+      if (!date) return 0;
+      return date.seconds ? date.seconds * 1000 : new Date(date).getTime();
+    };
+    return getMs(b.createdAt) - getMs(a.createdAt);
+  });
 };
 
 export const approveUser = async (mobile) => {
