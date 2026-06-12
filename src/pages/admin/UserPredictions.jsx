@@ -7,6 +7,12 @@ const UserPredictions = () => {
   const [users, setUsers] = useState({});
   const [loading, setLoading] = useState(true);
 
+  const formatTime = (ts) => {
+    if (!ts) return 'N/A';
+    const date = ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts);
+    return date.toLocaleString();
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -28,6 +34,9 @@ const UserPredictions = () => {
           if (typeof ts === 'string') return new Date(ts).getTime();
           return 0;
         };
+
+        // Attach formatTime to window or just handle it differently? Wait, formatTime needs to be available in the render.
+        // It's better to put formatTime outside useEffect or inside the component body but outside useEffect.
 
         predsData.sort((a, b) => {
           return getTimeMs(b.submittedAt) - getTimeMs(a.submittedAt);
@@ -55,6 +64,7 @@ const UserPredictions = () => {
         <table className="table">
           <thead>
             <tr>
+              <th>Time</th>
               <th>User</th>
               <th>Match</th>
               <th>Prediction</th>
@@ -67,6 +77,9 @@ const UserPredictions = () => {
               const user = users[p.userId];
               return (
                 <tr key={p.predictionId} className="animate-slide-up" style={{ animationDelay: `${i * 0.05}s` }}>
+                  <td style={{ fontSize: '14px', color: 'var(--c-dark-gray)' }}>
+                    {formatTime(p.submittedAt)}
+                  </td>
                   <td style={{ fontWeight: '700', color: 'var(--c-dark-gray)' }}>
                     {user ? `${user.name} (${p.userId})` : p.userId}
                   </td>
