@@ -16,7 +16,8 @@ import {
   endBefore,
   serverTimestamp,
   getCountFromServer,
-  increment
+  increment,
+  writeBatch
 } from "firebase/firestore";
 
 // -- USERS --
@@ -35,6 +36,8 @@ export const registerUser = async (name, mobile, pin) => {
     mobile,
     pin,
     points: 0,
+    predictionsCount: 0,
+    correctPredictions: 0,
     status: "pending", // pending, approved, rejected
     createdAt: serverTimestamp()
   };
@@ -74,21 +77,11 @@ export const getUserStats = async (mobile) => {
     throw new Error("User not found.");
   }
   
-  // Get predictions count
-  const q = query(collection(db, "predictions"), where("userId", "==", mobile));
-  const querySnapshot = await getDocs(q);
-  
-  let correctPredictions = 0;
-  querySnapshot.forEach((doc) => {
-    if (doc.data().points > 0) {
-      correctPredictions++;
-    }
-  });
-
+  const data = userSnap.data();
   return {
-    ...userSnap.data(),
-    predictionsCount: querySnapshot.size,
-    correctPredictions
+    ...data,
+    predictionsCount: data.predictionsCount || 0,
+    correctPredictions: data.correctPredictions || 0
   };
 };
 
@@ -177,18 +170,15 @@ export const submitPrediction = async (userId, matchId, predictedA, predictedB) 
     points: 0,
     submittedAt: serverTimestamp()
   });
+
+  const userRef = doc(db, "users", userId);
+  await updateDoc(userRef, { predictionsCount: increment(1) });
 };
 
 export const getUserPredictions = async (userId) => {
   const q = query(collection(db, "predictions"), where("userId", "==", userId));
   const querySnapshot = await getDocs(q);
   
-  return querySnapshot.docs.map(doc => doc.data());
-};
-
-export const getAllPredictions = async () => {
-  const q = query(collection(db, "predictions"));
-  const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => doc.data());
 };
 
@@ -233,32 +223,48 @@ export const setMatchResult = async (matchId, scoreA, scoreB) => {
     status: "completed"
   });
 
-  // Calculate points for all predictions for this match
   const q = query(collection(db, "predictions"), where("matchId", "==", matchId));
   const querySnapshot = await getDocs(q);
+
+  let batch = writeBatch(db);
+  let operationCount = 0;
 
   for (const predictionDoc of querySnapshot.docs) {
     const prediction = predictionDoc.data();
     let oldPoints = prediction.points || 0;
     let newPoints = 0;
     
-    // Rule: Exact score prediction = 1 point, otherwise 0
     if (prediction.predictedA === parseInt(scoreA) && prediction.predictedB === parseInt(scoreB)) {
       newPoints = 1;
     }
     
     const pointDiff = newPoints - oldPoints;
     
-    // Update prediction points if they changed
     if (oldPoints !== newPoints) {
-      await updateDoc(predictionDoc.ref, { points: newPoints });
+      batch.update(predictionDoc.ref, { points: newPoints });
+      operationCount++;
     }
 
-    // Safely update user's total points only by the difference
     if (pointDiff !== 0) {
       const userRef = doc(db, "users", prediction.userId);
-      await updateDoc(userRef, { points: increment(pointDiff) });
+      const pointChange = pointDiff > 0 ? 1 : (pointDiff < 0 ? -1 : 0);
+      batch.update(userRef, { 
+        points: increment(pointDiff),
+        correctPredictions: increment(pointChange)
+      });
+      operationCount++;
     }
+
+    // Commit batch if it nears the 500 limit
+    if (operationCount >= 490) {
+      await batch.commit();
+      batch = writeBatch(db);
+      operationCount = 0;
+    }
+  }
+
+  if (operationCount > 0) {
+    await batch.commit();
   }
 };
 
@@ -281,12 +287,6 @@ export const getLeaderboard = async () => {
   const q = query(usersRef, orderBy("points", "desc"), limit(10));
   const querySnapshot = await getDocs(q);
   
-  return querySnapshot.docs.map(doc => doc.data());
-};
-
-export const getAllUsers = async () => {
-  const usersRef = collection(db, "users");
-  const querySnapshot = await getDocs(usersRef);
   return querySnapshot.docs.map(doc => doc.data());
 };
 
