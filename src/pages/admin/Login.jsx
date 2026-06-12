@@ -19,7 +19,7 @@ const AdminLogin = () => {
     try {
       const admin = await loginAdmin(username, password);
       adminLogin(admin);
-      navigate('/admin');
+      navigate('/admin/pending');
     } catch (err) {
       setError(err.message);
     } finally {
