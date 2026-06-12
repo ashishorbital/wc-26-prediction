@@ -12,7 +12,12 @@ const AdminDashboard = () => {
     const fetchUsers = async () => {
       try {
         const data = await getAllUsers();
-        setUsers(data);
+        const sortedData = data.sort((a, b) => {
+          const nameA = (a.name || '').toLowerCase();
+          const nameB = (b.name || '').toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+        setUsers(sortedData);
       } catch (err) {
         console.error("Error fetching users:", err);
       } finally {
@@ -25,7 +30,7 @@ const AdminDashboard = () => {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ color: 'var(--c-electric-purple)', margin: 0 }}>Registered Users</h2>
+        <h2 style={{ color: 'var(--c-electric-purple)', margin: 0 }}>Registered Users ({users.length})</h2>
         <p style={{ margin: 0, fontWeight: '500', color: 'var(--c-dark-gray)' }}>
           Welcome, {admin.username}
         </p>
