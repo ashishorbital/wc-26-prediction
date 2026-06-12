@@ -22,19 +22,12 @@ const AdminLayout = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main)' }}>
+    <div className="admin-layout">
       {/* Sidebar for Admin */}
-      <aside className="card" style={{ 
-        width: '280px', 
-        padding: '32px 24px', 
-        margin: '24px', 
-        display: 'flex', 
-        flexDirection: 'column',
-        borderRadius: '32px'
-      }}>
+      <aside className="card admin-sidebar">
         <h2 className="text-center mb-4" style={{ color: 'var(--c-electric-purple)' }}>Admin Portal</h2>
         
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+        <nav className="admin-nav" style={{ flex: 1 }}>
           {navItems.map(item => {
             const isActive = location.pathname === item.path;
             return (
@@ -50,11 +43,12 @@ const AdminLayout = () => {
                   textTransform: 'uppercase',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.05em',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  justifyContent: 'center'
                 }}
               >
                 {item.icon}
-                {item.label}
+                <span className="hide-on-mobile">{item.label}</span>
               </Link>
             )
           })}
@@ -66,7 +60,7 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: '24px 24px 48px 0', overflowY: 'auto' }} className="animate-slide-up">
+      <main className="admin-main animate-slide-up">
         <Outlet />
       </main>
     </div>
