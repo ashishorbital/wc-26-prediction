@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
   const [mobile, setMobile] = useState('');
+  const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -17,10 +18,13 @@ const Login = () => {
     if (!/^\d{10}$/.test(mobile)) {
       return setError('Mobile number must be exactly 10 digits');
     }
+    if (!/^\d{4}$/.test(pin)) {
+      return setError('PIN must be exactly 4 digits');
+    }
 
     setLoading(true);
     try {
-      const user = await loginUser(mobile);
+      const user = await loginUser(mobile, pin);
       login(user);
       navigate('/');
     } catch (err) {
@@ -50,6 +54,18 @@ const Login = () => {
                 onChange={(e) => setMobile(e.target.value)} 
                 placeholder="10 digit number"
                 maxLength={10}
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">4-Digit PIN</label>
+              <input 
+                type="password" 
+                className="form-control" 
+                value={pin} 
+                onChange={(e) => setPin(e.target.value)} 
+                placeholder="0000"
+                maxLength={4}
               />
             </div>
 

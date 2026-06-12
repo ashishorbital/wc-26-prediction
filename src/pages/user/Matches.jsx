@@ -35,10 +35,26 @@ const Matches = () => {
   };
 
   const handlePredict = async (matchId, teamA, teamB, dt) => {
-    if (!isBefore(new Date(), parseISO(dt))) {
-      alert("Match has already started!");
-      return;
+    setSubmitting(true);
+    try {
+      const response = await fetch('http://worldtimeapi.org/api/timezone/Etc/UTC');
+      const data = await response.json();
+      const serverTime = new Date(data.datetime);
+      
+      if (!isBefore(serverTime, parseISO(dt))) {
+        alert("Match has already started! (Verified via Network Time)");
+        setSubmitting(false);
+        return;
+      }
+    } catch (err) {
+      // Fallback to local time if API fails
+      if (!isBefore(new Date(), parseISO(dt))) {
+        alert("Match has already started!");
+        setSubmitting(false);
+        return;
+      }
     }
+    setSubmitting(false);
 
     const scoreA = prompt(`Predict score for ${teamA}:`, predictions[matchId]?.predictedA || 0);
     if (scoreA === null) return;

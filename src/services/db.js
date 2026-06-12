@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 
 // -- USERS --
-export const registerUser = async (name, mobile) => {
+export const registerUser = async (name, mobile, pin) => {
   const userRef = doc(db, "users", mobile);
   const userSnap = await getDoc(userRef);
   
@@ -27,6 +27,7 @@ export const registerUser = async (name, mobile) => {
     userId: mobile,
     name,
     mobile,
+    pin,
     points: 0,
     createdAt: serverTimestamp()
   };
@@ -35,7 +36,7 @@ export const registerUser = async (name, mobile) => {
   return userData;
 };
 
-export const loginUser = async (mobile) => {
+export const loginUser = async (mobile, pin) => {
   const userRef = doc(db, "users", mobile);
   const userSnap = await getDoc(userRef);
   
@@ -43,7 +44,12 @@ export const loginUser = async (mobile) => {
     throw new Error("User not found. Please register first.");
   }
   
-  return userSnap.data();
+  const userData = userSnap.data();
+  if (userData.pin && userData.pin !== pin) {
+    throw new Error("Invalid PIN.");
+  }
+  
+  return userData;
 };
 
 export const getUserStats = async (mobile) => {
