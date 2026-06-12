@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMatches, setMatchResult, deleteMatch } from '../../services/db';
+import { getMatches, setMatchResult, updateMatch } from '../../services/db';
 import { format, parseISO, isBefore } from 'date-fns';
 
 const ManageMatches = () => {
@@ -41,14 +41,31 @@ const ManageMatches = () => {
     }
   };
 
-  const handleDeleteMatch = async (matchId) => {
-    if (confirm("Are you sure you want to delete this match?")) {
-      try {
-        await deleteMatch(matchId);
-        fetchMatches();
-      } catch (err) {
-        alert(err.message);
-      }
+  const handleEditMatch = async (match) => {
+    const newTeamA = prompt("Edit Team A:", match.teamA);
+    if (newTeamA === null) return;
+    const newTeamB = prompt("Edit Team B:", match.teamB);
+    if (newTeamB === null) return;
+    
+    const currentDate = parseISO(match.matchDateTime);
+    const dateStr = format(currentDate, 'yyyy-MM-dd');
+    const timeStr = format(currentDate, 'HH:mm');
+
+    const newDate = prompt("Edit Date (YYYY-MM-DD):", dateStr);
+    if (newDate === null) return;
+    const newTime = prompt("Edit Time (HH:MM):", timeStr);
+    if (newTime === null) return;
+
+    try {
+      const dateTimeStr = `${newDate}T${newTime}:00`;
+      await updateMatch(match.id, {
+        teamA: newTeamA,
+        teamB: newTeamB,
+        matchDateTime: new Date(dateTimeStr).toISOString(),
+      });
+      fetchMatches();
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -92,8 +109,8 @@ const ManageMatches = () => {
                     Set Result
                   </button>
                   {isBefore(new Date(), parseISO(m.matchDateTime)) && (
-                    <button onClick={() => handleDeleteMatch(m.id)} className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '14px', color: 'var(--c-bright-red)', borderColor: 'var(--c-bright-red)' }}>
-                      Delete
+                    <button onClick={() => handleEditMatch(m)} className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '14px', color: 'var(--c-royal-blue)', borderColor: 'var(--c-royal-blue)' }}>
+                      Edit
                     </button>
                   )}
                 </td>
