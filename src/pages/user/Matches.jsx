@@ -9,6 +9,7 @@ const Matches = () => {
   const [predictions, setPredictions] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(4);
 
   useEffect(() => {
     fetchData();
@@ -99,11 +100,18 @@ const Matches = () => {
 
   if (loading) return <div className="text-center mt-4">Loading matches...</div>;
 
+  const visibleMatches = matches.slice(0, visibleCount);
+  const hasMore = visibleCount < matches.length;
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + 4);
+  };
+
   return (
     <div>
       <h2 className="mb-4">Match<br/><span style={{ color: 'var(--c-royal-blue)' }}>Schedule</span></h2>
       <div className="grid-12">
-        {matches.map((match, idx) => {
+        {visibleMatches.map((match, idx) => {
           const isStarted = !isBefore(new Date(), parseISO(match.matchDateTime));
           const pred = predictions[match.id];
           const isCompleted = match.status === 'completed';
@@ -168,8 +176,21 @@ const Matches = () => {
           );
         })}
       </div>
+      
+      {hasMore && (
+        <div style={{ textAlign: 'center', marginTop: '32px' }}>
+          <button 
+            className="btn btn-secondary" 
+            onClick={handleLoadMore}
+            style={{ padding: '12px 32px' }}
+          >
+            Load More
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Matches;
+
