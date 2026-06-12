@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getMatches, setMatchResult, deleteMatch } from '../../services/db';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isBefore } from 'date-fns';
 
 const ManageMatches = () => {
   const [matches, setMatches] = useState([]);
@@ -91,9 +91,11 @@ const ManageMatches = () => {
                   <button onClick={() => handleSetResult(m.id)} className="btn btn-secondary" style={{ padding: '8px 16px', fontSize: '14px', marginRight: '8px', background: 'var(--c-neon-green)', color: 'var(--c-dark-teal)' }}>
                     Set Result
                   </button>
-                  <button onClick={() => handleDeleteMatch(m.id)} className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '14px', color: 'var(--c-bright-red)', borderColor: 'var(--c-bright-red)' }}>
-                    Delete
-                  </button>
+                  {isBefore(new Date(), parseISO(m.matchDateTime)) && (
+                    <button onClick={() => handleDeleteMatch(m.id)} className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '14px', color: 'var(--c-bright-red)', borderColor: 'var(--c-bright-red)' }}>
+                      Delete
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
