@@ -31,7 +31,7 @@ const Dashboard = () => {
       
       <div className="grid-12">
         {/* Total Points Card */}
-        <div className="card col-span-12 md:col-span-4" style={{ 
+        <div className="card col-span-12 md:col-span-6" style={{ 
           background: 'var(--c-electric-purple)', 
           color: 'white',
           display: 'flex',
@@ -56,7 +56,7 @@ const Dashboard = () => {
         </div>
 
         {/* Predictions Made Card */}
-        <div className="card col-span-12 md:col-span-4" style={{ 
+        <div className="card col-span-12 md:col-span-6" style={{ 
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -73,23 +73,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Perfect Matches Card */}
-        <div className="card col-span-12 md:col-span-4" style={{ 
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          minHeight: '200px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ padding: '16px', background: 'rgba(0, 230, 77, 0.1)', borderRadius: '24px', color: 'var(--c-neon-green)' }}>
-              <Hash size={32} />
-            </div>
-          </div>
-          <div>
-            <h3 style={{ fontSize: '48px', margin: 0, lineHeight: 1, color: 'var(--c-dark-teal)' }}>{stats.correctPredictions}</h3>
-            <p style={{ textTransform: 'uppercase', fontWeight: 700, color: 'var(--c-dark-gray)' }}>Perfect Matches</p>
-          </div>
-        </div>
+
       </div>
     </div>
   );
