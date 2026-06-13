@@ -29,8 +29,3 @@ dist-ssr
 .env.development
 .env.production
 !.env.example
-
-# Media
-*.mpeg
-*.mp3
-*.mp4
