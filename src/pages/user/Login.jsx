@@ -10,9 +10,33 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showAd, setShowAd] = useState(true); // Always show on mount
+  const [audioPlayed, setAudioPlayed] = useState(false);
   
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  useEffect(() => {
+    if (showAd && !audioPlayed) {
+      const playAudio = () => {
+        const audio = document.getElementById('ad-audio');
+        if (audio) {
+          audio.play()
+            .then(() => setAudioPlayed(true))
+            .catch(e => {
+              // Autoplay was blocked, will try again on next click
+              console.log('Autoplay blocked, waiting for user interaction');
+            });
+        }
+      };
+      
+      // Try to play immediately (works if user navigated here, e.g. from logout)
+      playAudio();
+      
+      // Add a listener to play on the first click (works if they refreshed the page)
+      document.addEventListener('click', playAudio);
+      return () => document.removeEventListener('click', playAudio);
+    }
+  }, [showAd, audioPlayed]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -137,6 +161,8 @@ const Login = () => {
                 margin: '0 auto'
               }}
             />
+            {/* Play audio automatically when the ad is shown */}
+            <audio id="ad-audio" src="/audio.mpeg" />
           </div>
         </div>
       )}
