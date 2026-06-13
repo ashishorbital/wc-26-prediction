@@ -6,6 +6,8 @@ const ManageMatches = () => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [winnersView, setWinnersView] = useState(null);
+
   useEffect(() => {
     fetchMatches();
   }, []);
@@ -69,21 +71,13 @@ const ManageMatches = () => {
     }
   };
 
-  const handleExportPredictions = async (match, onlyWinners = false) => {
+  const handleShowWinners = async (match) => {
     try {
       const preds = await getPredictionsByMatch(match.id);
-      
-      let filteredPreds = preds;
-      if (onlyWinners) {
-        if (match.status !== 'completed') {
-          alert("Cannot export winners for an incomplete match.");
-          return;
-        }
-        filteredPreds = preds.filter(p => p.points > 0);
-      }
+      const filteredPreds = preds.filter(p => p.points > 0);
 
       if (filteredPreds.length === 0) {
-        alert(onlyWinners ? "No winners for this match." : "No predictions for this match yet.");
+        alert("No winners for this match.");
         return;
       }
       
@@ -95,8 +89,36 @@ const ManageMatches = () => {
         userMap[u.userId] = u;
       });
 
+      const winners = filteredPreds.map(p => ({
+        ...p,
+        user: userMap[p.userId] || { name: "Unknown", mobile: p.userId }
+      }));
+
+      setWinnersView({ match, winners });
+    } catch(err) {
+      alert("Failed to load winners: " + err.message);
+    }
+  };
+
+  const handleExportPredictions = async (match) => {
+    try {
+      const preds = await getPredictionsByMatch(match.id);
+      
+      if (preds.length === 0) {
+        alert("No predictions for this match yet.");
+        return;
+      }
+      
+      const userIds = preds.map(p => p.userId);
+      const users = await getUsersByIds(userIds);
+      
+      const userMap = {};
+      users.forEach(u => {
+        userMap[u.userId] = u;
+      });
+
       let csv = "Name,Mobile,Predicted Team A,Predicted Team B,Points\n";
-      filteredPreds.forEach(p => {
+      preds.forEach(p => {
         const u = userMap[p.userId] || { name: "Unknown", mobile: p.userId };
         csv += `"${u.name}","${u.mobile}",${p.predictedA},${p.predictedB},${p.points || 0}\n`;
       });
@@ -105,8 +127,7 @@ const ManageMatches = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      const fileNamePrefix = onlyWinners ? "Winners" : "Predictions";
-      link.setAttribute('download', `${fileNamePrefix}_${match.teamA}_vs_${match.teamB}.csv`);
+      link.setAttribute('download', `Predictions_${match.teamA}_vs_${match.teamB}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -117,6 +138,41 @@ const ManageMatches = () => {
   };
 
   if (loading) return <div>Loading matches...</div>;
+
+  if (winnersView) {
+    return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+          <button onClick={() => setWinnersView(null)} className="btn btn-outline" style={{ marginRight: '16px', padding: '8px 16px' }}>&larr; Back</button>
+          <h2 style={{ color: 'var(--c-royal-blue)', margin: 0 }}>
+            Winners: {winnersView.match.teamA} vs {winnersView.match.teamB}
+          </h2>
+        </div>
+        <div className="table-container">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Mobile</th>
+                <th>Predicted Score</th>
+                <th>Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {winnersView.winners.map((w, i) => (
+                <tr key={w.userId} className="animate-slide-up" style={{ animationDelay: `${i * 0.05}s` }}>
+                  <td style={{ fontWeight: '700' }}>{w.user.name}</td>
+                  <td>{w.user.mobile}</td>
+                  <td>{w.predictedA} - {w.predictedB}</td>
+                  <td style={{ fontWeight: '800', color: 'var(--c-dark-teal)' }}>{w.points}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -153,7 +209,7 @@ const ManageMatches = () => {
                 </td>
                 <td style={{ textAlign: 'right' }}>
                   {m.status === 'completed' && (
-                    <button onClick={() => handleExportPredictions(m, true)} className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '14px', marginRight: '8px', color: 'var(--c-royal-blue)', borderColor: 'var(--c-royal-blue)' }}>
+                    <button onClick={() => handleShowWinners(m)} className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '14px', marginRight: '8px', color: 'var(--c-royal-blue)', borderColor: 'var(--c-royal-blue)' }}>
                       Winners
                     </button>
                   )}
