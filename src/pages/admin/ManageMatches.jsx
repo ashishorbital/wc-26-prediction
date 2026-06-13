@@ -69,15 +69,25 @@ const ManageMatches = () => {
     }
   };
 
-  const handleExportPredictions = async (match) => {
+  const handleExportPredictions = async (match, onlyWinners = false) => {
     try {
       const preds = await getPredictionsByMatch(match.id);
-      if (preds.length === 0) {
-        alert("No predictions for this match yet.");
+      
+      let filteredPreds = preds;
+      if (onlyWinners) {
+        if (match.status !== 'completed') {
+          alert("Cannot export winners for an incomplete match.");
+          return;
+        }
+        filteredPreds = preds.filter(p => p.points > 0);
+      }
+
+      if (filteredPreds.length === 0) {
+        alert(onlyWinners ? "No winners for this match." : "No predictions for this match yet.");
         return;
       }
       
-      const userIds = preds.map(p => p.userId);
+      const userIds = filteredPreds.map(p => p.userId);
       const users = await getUsersByIds(userIds);
       
       const userMap = {};
@@ -86,7 +96,7 @@ const ManageMatches = () => {
       });
 
       let csv = "Name,Mobile,Predicted Team A,Predicted Team B,Points\n";
-      preds.forEach(p => {
+      filteredPreds.forEach(p => {
         const u = userMap[p.userId] || { name: "Unknown", mobile: p.userId };
         csv += `"${u.name}","${u.mobile}",${p.predictedA},${p.predictedB},${p.points || 0}\n`;
       });
@@ -95,7 +105,8 @@ const ManageMatches = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      link.setAttribute('download', `Predictions_${match.teamA}_vs_${match.teamB}.csv`);
+      const fileNamePrefix = onlyWinners ? "Winners" : "Predictions";
+      link.setAttribute('download', `${fileNamePrefix}_${match.teamA}_vs_${match.teamB}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -141,6 +152,11 @@ const ManageMatches = () => {
                   {m.status === 'completed' ? `${m.scoreA} - ${m.scoreB}` : '-'}
                 </td>
                 <td style={{ textAlign: 'right' }}>
+                  {m.status === 'completed' && (
+                    <button onClick={() => handleExportPredictions(m, true)} className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '14px', marginRight: '8px', color: 'var(--c-royal-blue)', borderColor: 'var(--c-royal-blue)' }}>
+                      Winners
+                    </button>
+                  )}
                   <button onClick={() => handleExportPredictions(m)} className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '14px', marginRight: '8px', color: 'var(--c-dark-gray)', borderColor: 'var(--c-dark-gray)' }}>
                     Export
                   </button>
