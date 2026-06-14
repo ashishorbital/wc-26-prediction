@@ -23,7 +23,12 @@ const Leaderboard = () => {
           return { ...u, rank: currentRank };
         });
 
-        setUsers(rankedData);
+        const rank1Count = rankedData.filter(u => u.rank === 1).length;
+        if (rank1Count > 10) {
+          setUsers(rankedData.filter(u => u.rank === 1));
+        } else {
+          setUsers(rankedData.slice(0, 10));
+        }
       } catch (err) {
         console.error(err);
       } finally {
