@@ -1,0 +1,3 @@
+[submodule "skills/beautify-github-readme"]
+	path = skills/beautify-github-readme
+	url = https://github.com/oil-oil/beautify-github-readme
